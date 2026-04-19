@@ -11,10 +11,28 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
+
+  void _confirmDelete(BuildContext context, int taskId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Apagar Tarefa"),
+        content: const Text("Deseja mesmo remover esta tarefa?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Não")),
+          TextButton(
+            onPressed: () {
+              _taskService.deleteTask(taskId);
+              Navigator.pop(ctx);
+            }, 
+            child: const Text("Sim", style: TextStyle(color: Colors.red))
+          ),
+        ],
+      ),
+    );
+  }
+
   final TaskService _taskService = TaskService();
-  
-  // Guardamos o future em uma variável para o FutureBuilder não 
-  // disparar um novo GET toda vez que a tela redesenhar por outro motivo
   late Future<List<Task>> _tasksFuture;
 
   @override
@@ -62,7 +80,7 @@ class _TasksScreenState extends State<TasksScreen> {
             itemCount: tasks.length,
             itemBuilder: (context, index) {
               final task = tasks[index];
-              return Card( // Adicionado um Card para ficar mais visível
+              return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 child: ListTile(
                   isThreeLine: true,
@@ -71,16 +89,11 @@ class _TasksScreenState extends State<TasksScreen> {
                     onChanged: (bool? newValue) async {
                       if (newValue != null && task.id != null) {
                         try {
-                          // 1. Chama a API Java para atualizar no banco (MySQL/H2)
-                          await _taskService.toggleTaskStatus(task.id!);
-                          
-                          // 2. Se a API respondeu OK, atualizamos a interface (UI)
+                          await _taskService.toggleTaskStatus(task.id!);                        
                           setState(() {
-                            // Isso recarrega o FutureBuilder e mostra o check marcado
                             _refreshTasks(); 
                           });
                         } catch (e) {
-                          // Se o Spring Boot estiver fora ou der erro de rede
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text("Erro ao sincronizar: $e")),
                           );
@@ -103,6 +116,10 @@ class _TasksScreenState extends State<TasksScreen> {
                       ),
                     ],
                   ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),  
+                    onPressed: () => _confirmDelete(context, task.id!),
+                  ),
                 ),
               );
             },
@@ -117,7 +134,7 @@ class _TasksScreenState extends State<TasksScreen> {
           );
 
           if (refresh == true) {
-            _refreshTasks(); // Atualiza a lista chamando a API novamente
+            _refreshTasks();
           }
         },
         child: const Icon(Icons.add),

@@ -10,7 +10,6 @@ class TaskService {
     defaultValue: 'http://localhost:8080'
   );
 
-  // GET: Buscar todas as tarefas
   Future<List<Task>> getTasks() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
@@ -30,7 +29,6 @@ class TaskService {
     }
   }
 
-  // POST: Criar nova tarefa
   Future<Task> createTask(Task task) async {
     final prefs = await SharedPreferences.getInstance();
     String? jwt = prefs.getString('jwt_token');
@@ -63,6 +61,22 @@ class TaskService {
 
     if (response.statusCode != 200) {
       throw Exception('Falha ao atualizar status');
+    }
+  }
+
+    Future<void> deleteTask(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? jwt = prefs.getString('jwt_token');
+    final response = await http.delete(
+      Uri.parse('$baseUrl/api/tasks/$id'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $jwt",
+        },
+    );
+
+    if (response.statusCode != 204) {
+      throw Exception('Falha ao apagar tarefa');
     }
   }
 }

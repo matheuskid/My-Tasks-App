@@ -2,7 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/login_respose.dart' show LoginResponse;
+import '../models/login_response.dart' show LoginResponse;
 
 class AuthService {
 
