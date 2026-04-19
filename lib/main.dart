@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/login_screen.dart';
+import 'controllers/login_controller.dart';
+import 'controllers/task_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -8,7 +11,15 @@ void main() async {
 
   await SharedPreferences.getInstance();
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginController()),
+        ChangeNotifierProvider(create: (_) => TaskController()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

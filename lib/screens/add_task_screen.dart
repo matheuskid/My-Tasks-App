@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/task.dart';
-import '../services/task_service.dart';
+import '../controllers/task_controller.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -12,49 +13,59 @@ class AddTaskScreen extends StatefulWidget {
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _taskService = TaskService();
   
-  bool _isLoading = false;
-  
-  // Inicializamos com a data de hoje para evitar o erro de "not initialized"
   DateTime _selectedDate = DateTime.now();
+  bool _isSaving = false; // Estado local apenas para o fluxo de salvar
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   void _presentDatePicker() async {
     final pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
-      firstDate: DateTime.now(), // Impede selecionar datas passadas para novas tasks
+      firstDate: DateTime.now(),
       lastDate: DateTime(2030),
     );
 
     if (pickedDate != null) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
+      setState(() => _selectedDate = pickedDate);
     }
   }
 
-  void _saveTask() async {
-    setState(() => _isLoading = true);
+  Future<void> _saveTask() async {
+    if (_titleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("O título é obrigatório")),
+      );
+      return;
+    }
 
-    // Criando o objeto Task (que usará o toRequest() para o seu DTO Java)
+    setState(() => _isSaving = true);
+
     final newTask = Task(
       title: _titleController.text,
       description: _descriptionController.text,
-      dueDate: _selectedDate
+      dueDate: _selectedDate,
+      completed: false,
     );
 
     try {
-      await _taskService.createTask(newTask);
-      if (mounted) Navigator.pop(context, true); 
+      // Usando o Provider para salvar
+      await context.read<TaskController>().addTask(newTask);
+      if (mounted) Navigator.pop(context); 
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao salvar no Spring Boot: $e")),
+          SnackBar(content: Text("Erro ao salvar: $e")),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -66,9 +77,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       appBar: AppBar(
         title: const Text('Nova Tarefa'),
         centerTitle: true,
-        backgroundColor: theme.colorScheme.inversePrimary,
       ),
-      body: SingleChildScrollView( // Evita erro de layout quando o teclado abre
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
@@ -80,6 +90,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   children: [
                     TextField(
                       controller: _titleController,
+                      // Teclado começa com letra maiúscula
+                      textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
                         labelText: 'Título',
                         prefixIcon: Icon(Icons.title),
@@ -90,6 +102,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     TextField(
                       controller: _descriptionController,
                       maxLines: 3,
+                      // Teclado começa com letra maiúscula
+                      textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
                         labelText: 'Descrição',
                         prefixIcon: Icon(Icons.description),
@@ -97,12 +111,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Seletor de Data estilizado
                     ListTile(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
                       leading: const Icon(Icons.calendar_today),
                       title: const Text("Data de Vencimento"),
                       subtitle: Text(
@@ -119,7 +128,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _isLoading 
+            _isSaving 
               ? const CircularProgressIndicator()
               : SizedBox(
                   width: double.infinity,
@@ -127,7 +136,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _saveTask,
                     icon: const Icon(Icons.save),
-                    label: const Text('SALVAR TAREFA', style: TextStyle(fontSize: 16)),
+                    label: const Text('SALVAR TAREFA'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: theme.colorScheme.primary,
                       foregroundColor: theme.colorScheme.onPrimary,

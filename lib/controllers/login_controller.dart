@@ -1,32 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:todo_app/services/auth_service.dart';
+import '../services/auth_service.dart';
 
-class LoginController {
+class LoginController extends ChangeNotifier {
   final AuthService _authService = AuthService();
-  final TextEditingController loginController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
+  
+  bool isLoading = false;
+  String? errorMessage;
 
-  Future<void> handleLogin(BuildContext context) async {
-    String login = loginController.text;
-    String password = passwordController.text;
+  Future<bool> login(String username, String password) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
 
-    if (login.isEmpty || password.isEmpty) {
-      _showSnackBar(context, "Preencha todos os campos!");
-      return;
+    try {
+      final success = await _authService.login(username, password);
+      isLoading = false;
+      if (!success) errorMessage = "Credenciais inválidas";
+      notifyListeners();
+      return success;
+    } catch (e) {
+      isLoading = false;
+      errorMessage = e.toString();
+      notifyListeners();
+      return false;
     }
-
-    bool success = await _authService.login(login, password);
-
-    if (success && context.mounted) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      _showSnackBar(context, "Falha no login. Verifique suas credenciais.");
-    }
-  }
-
-  void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
   }
 }

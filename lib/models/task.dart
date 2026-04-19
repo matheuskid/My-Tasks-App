@@ -13,7 +13,16 @@ class Task {
     required this.dueDate
   });
 
-  // Converte JSON (Map) para Objeto Task 
+  Task copyWith({bool? completed}) {
+    return Task(
+      id: id,
+      title: title,
+      description: description,
+      dueDate: dueDate,
+      completed: completed ?? this.completed,
+    );
+  }
+
   factory Task.responseJson(Map<String, dynamic> json) {
     return Task(
       id: json['id'],
@@ -24,7 +33,6 @@ class Task {
     );
   }
 
-  // Converte Objeto Task para JSON
   Map<String, dynamic> toResquest() {
     return {
       'title': title,
