@@ -1,10 +1,4 @@
----
-title: "MyTasks - Aplicativo para Gestão de Tarefas"
-date: 2026-04-14
-description: "Ecossistema completo com API Spring Boot e App Mobile em Flutter."
-tags: ["Java", "Spring Boot", "Flutter", "Docker", "JWT"]
-showDate: true
----
+# MyTasks - Aplicativo para Gestão de Tarefas
 
 O MyTasks é um aplicativo pessoal de gestão de tarefas. O projeto foca em uma separação clara de responsabilidades, garantindo segurança via autenticação JWT e uma interface mobile intuitiva e reativa. O projeto foi desenvolvido com o intuito de aprimorar meus conhecimentos em Backend e adquirir novas competências de Frontend e Mobile.
 
